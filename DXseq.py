@@ -3,6 +3,7 @@
 from math import *
 from linalg import *
 from output import *
+import numpy as np
 import sys
 import os
 
@@ -29,17 +30,19 @@ if len(args) == 3:
 else:
     curvature = False
 
-seqfile = open(DIR + r"/DATA/sequence.txt")
-seq = []
 
-for x in seqfile.readlines():
-    seq.append(x.rstrip())
+seq = []
+with open(DIR + r"/DATA/sequence.txt") as seqfile:
+    for line in seqfile:
+        seq.append(line.rstrip())
+
 
 # length of base pairs for 2 connected DX tiles
 # if tiletype[0] == 'M': STACK_NUM = 79
 
 dup1 = seq[seq.index(tiletype)+1]
 dup2 = seq[seq.index(tiletype)+2]
+
 if tiletype[0] == 'M' or tiletype[0] == 'F':
     dup3 = seq[seq.index(tiletype)+3]
     dup4 = seq[seq.index(tiletype)+4]
@@ -68,34 +71,32 @@ if tiletype[0] == 'D':
 
 ###############################################################################
 # read-in parameters(omega,rho,tau,slide) of each base pairs
-domega = open(DIR + r'/DATA/domega.txt')
-drho = open(DIR + r'/DATA/drho.txt')
-dtau = open(DIR + r'/DATA/dtau.txt')
-dslide = open(DIR + r'/DATA/dslide.txt')
-
 omegatable = []
 rhotable = []
 tautable = []
 slidetable = []
 
-for x in domega.readlines():
-    omegatable.append(float(x.rstrip()))
+with open(DIR + r'/DATA/domega.txt') as domega:
+    for line in domega:
+        omegatable.append(float(line.rstrip()))
 
-for x in drho.readlines():
-    rhotable.append(float(x.rstrip()))
+with open(DIR + r'/DATA/drho.txt') as drho:
+    for line in drho:
+        rhotable.append(float(line.rstrip()))
 
-for x in dtau.readlines():
-    tautable.append(float(x.rstrip()))
+with open(DIR + r'/DATA/dtau.txt') as dtau:
+    for line in dtau:
+        tautable.append(float(line.rstrip()))
 
-for x in dslide.readlines():
-    slidetable.append(float(x.rstrip()))
+with open(DIR + r'/DATA/dslide.txt') as dslide:
+    for line in dslide:
+        slidetable.append(float(line.rstrip()))
 
 # read-in atom parameters
-atomname_f = open(DIR + r"/DATA/atoms2.txt")
 atom_name = []
-for x in atomname_f.readlines():
-    atom_name.append(x.rstrip())
-atomname_f.close()
+with open(DIR + r"/DATA/atoms2.txt") as atomname_f:
+    for line in atomname_f:
+        atom_name.append(line.rstrip())
 ###############################################################################
 
 
@@ -107,27 +108,26 @@ def fbp_pos():
     """
 
     # read-in coordinates of all atoms of each complements
-    AT = open(DIR + r'/DATA/AT.txt')
-    TA = open(DIR + r'/DATA/TA.txt')
-    GC = open(DIR + r'/DATA/GC.txt')
-    CG = open(DIR + r'/DATA/CG.txt')
-
-    coordinates = [[[0. for k in range(3)] for j in range(164)]
-                   for i in range(STACK_NUM)]
-
+#    coordinates = [[[0. for k in range(3)] for j in range(164)]
+#                   for i in range(STACK_NUM)]
+    coordinates = np.zeros((STACK_NUM, 164, 3))
     temp_coordinates = []
 
-    for x in AT.readlines():
-        temp_coordinates.append(map(float, x.rstrip().split()))
+    with open(DIR + r'/DATA/AT.txt') as AT:
+        for line in AT:
+            temp_coordinates.append(map(float, line.rstrip().split()))
 
-    for x in GC.readlines():
-        temp_coordinates.append(map(float, x.rstrip().split()))
+    with open(DIR + r'/DATA/GC.txt') as GC:
+        for line in GC:
+            temp_coordinates.append(map(float, line.rstrip().split()))
 
-    for x in CG.readlines():
-        temp_coordinates.append(map(float, x.rstrip().split()))
+    with open(DIR + r'/DATA/CG.txt') as CG:
+        for line in CG:
+            temp_coordinates.append(map(float, line.rstrip().split()))
 
-    for x in TA.readlines():
-        temp_coordinates.append(map(float, x.rstrip().split()))
+    with open(DIR + r'/DATA/TA.txt') as TA:
+        for line in TA:
+            temp_coordinates.append(map(float, line.rstrip().split()))
 
     coordinates[0] = temp_coordinates[:][:]
 
@@ -141,10 +141,10 @@ def calculate(coordinates, omega, rho, tau, slide, axis):
 
     """
 
-    R = [[int(i == j) for i in range(3)] for j in range(3)]
+    R = np.identity(3, float)
 
-    sum_R = [0., 0., 0.]
-    sum_D = [0., 0., 0.]
+    sum_R = np.zeros(3)
+    sum_D = np.zeros(3)
 
     # iteration between base pairs
     for i in range(STACK_NUM-1):
@@ -152,23 +152,23 @@ def calculate(coordinates, omega, rho, tau, slide, axis):
         R = transform(omega, rho, tau, R, i)
 
         # normal vector of base pairs
-        sum_R[0] = sum_R[0]+R[2][0]
-        sum_R[1] = sum_R[1]+R[2][1]
-        sum_R[2] = sum_R[2]+R[2][2]
+        sum_R[0] = sum_R[0]+R[2, 0]
+        sum_R[1] = sum_R[1]+R[2, 1]
+        sum_R[2] = sum_R[2]+R[2, 2]
 
         # slide (D_y), slide[i] is the slide distance
-        sum_D[0] = sum_D[0]+slide[i]*R[1][0]
-        sum_D[1] = sum_D[1]+slide[i]*R[1][1]
-        sum_D[2] = sum_D[2]+slide[i]*R[1][2]
+        sum_D[0] = sum_D[0]+slide[i]*R[1, 0]
+        sum_D[1] = sum_D[1]+slide[i]*R[1, 1]
+        sum_D[2] = sum_D[2]+slide[i]*R[1, 2]
 
         ############################################################
         # leave the axis out for now
         for k in range(3):
-            axis[i+1][k] = axis[0][0]*R[0][k] + axis[0][1]*R[1][k] +\
-                axis[0][2]*R[2][k]
+            axis[i+1, k] = axis[0, 0]*R[0, k] + axis[0, 1]*R[1, k] +\
+                axis[0, 2]*R[2, k]
 
         for k in range(3):
-            axis[i+1][k] += RISE_ZERO*(sum_R[k])+sum_D[k]
+            axis[i+1, k] += RISE_ZERO*(sum_R[k])+sum_D[k]
         ############################################################
 
         # coordinates(1) = coordinates(0) * R_0
@@ -178,11 +178,9 @@ def calculate(coordinates, omega, rho, tau, slide, axis):
         for j in range(164):
             for k in range(3):
                 for l in range(3):
-                    coordinates[i+1][j][k] += \
-                        coordinates[0][j][l]*R[l][k]
+                    coordinates[i+1, j, k] += coordinates[0, j, l]*R[l, k]
 
-                coordinates[i+1][j][k] +=\
-                    RISE_ZERO*(sum_R[k])+sum_D[k]
+                coordinates[i+1, j, k] += RISE_ZERO*(sum_R[k])+sum_D[k]
 
     return coordinates, axis
 
@@ -320,11 +318,11 @@ def backbone_modify(duplex, coordinates, duplexnum):
 
     theta = 20.*PI
     angle = 2.5
-    R = [[int(i == j) for i in range(3)] for j in range(3)]
+    R = np.identity(3, float)
     STACK_NUM = 7
-    distcom = [0. for i in range(3)]
+    distcom = np.zeros(3)
     unit = []
-    acom = [0., 0., 0.]
+    acom = np.zeros(3)
 
     # 'unit' is a unit vector along the rotation axis
 
@@ -346,10 +344,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
             # create unit vector 'unit' along the axis of rotation
 
             for j in range(3):
-                distcom[j] =\
-                    coordinates[i][10][j]-coordinates[i][11][j]
+                distcom[j] = coordinates[i, 10, j]-coordinates[i, 11, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+            #sum = distance(distcom, np.zeros(3))
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -362,13 +360,13 @@ def backbone_modify(duplex, coordinates, duplexnum):
 
                 # index changed
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][11][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 11, k]
 
                 # index changed
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][11][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 11, k]
 
         elif duplex[i] == 'G':
 
@@ -384,9 +382,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
             # create unit vector 'unit' along the axis of rotation
 
             for j in range(3):
-                distcom[j] = coordinates[i][51][j]-coordinates[i][52][j]
+                distcom[j] = coordinates[i, 51, j]-coordinates[i, 52, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -398,12 +397,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(41, 51):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][52][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 52, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][52][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 52, k]
 
         elif duplex[i] == 'C':
 
@@ -419,9 +418,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
             # create unit vector 'unit' along the axis of rotation
 
             for j in range(3):
-                distcom[j] = coordinates[i][92][j] - coordinates[i][93][j]
+                distcom[j] = coordinates[i, 92, j] - coordinates[i, 93, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -432,12 +432,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(82, 92):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][93][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 93, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][93][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 93, k]
 
         else:
 
@@ -453,9 +453,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
             # create unit vector 'unit' along the axis of rotation
 
             for j in range(3):
-                distcom[j] = coordinates[i][133][j] - coordinates[i][134][j]
+                distcom[j] = coordinates[i, 133, j] - coordinates[i, 134, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -466,12 +467,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(123, 133):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][134][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 134, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][134][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 134, k]
 
     # iterate over all base pairs
     # from 3' -> 5' up the other side of the backbone (against the grain)
@@ -488,9 +489,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
                 theta = -angle*PI
 
             for j in range(3):
-                distcom[j] = coordinates[i][31][j]-coordinates[i][32][j]
+                distcom[j] = coordinates[i, 31, j]-coordinates[i, 32, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -502,12 +504,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(21, 31):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][32][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 32, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][32][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 32, k]
 
         elif duplex[i] == 'G':
 
@@ -520,9 +522,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
                 theta = -angle*PI
 
             for j in range(3):
-                distcom[j] = coordinates[i][73][j]-coordinates[i][74][j]
+                distcom[j] = coordinates[i, 73, j]-coordinates[i, 74, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -534,12 +537,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(63, 73):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][74][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 74, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][74][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 74, k]
 
         elif duplex[i] == 'C':
 
@@ -552,9 +555,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
                 theta = -angle*PI
 
             for j in range(3):
-                distcom[j] = coordinates[i][111][j]-coordinates[i][112][j]
+                distcom[j] = coordinates[i, 111, j]-coordinates[i, 112, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -565,12 +569,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(101, 111):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][112][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 112, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][112][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 112, k]
 
         # T-base
         else:
@@ -584,9 +588,10 @@ def backbone_modify(duplex, coordinates, duplexnum):
                 theta = -angle*PI
 
             for j in range(3):
-                distcom[j] = coordinates[i][153][j]-coordinates[i][154][j]
+                distcom[j] = coordinates[i, 153, j]-coordinates[i, 154, j]
 
-            sum = distance(distcom, [0., 0., 0.])
+#            sum = distance(distcom, [0., 0., 0.])
+            sum = np.linalg.norm(distcom)
 
             unit = []
             for j in distcom:
@@ -597,12 +602,12 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(143, 153):
 
                 for k in range(3):
-                    acom[k] = coordinates[i][j][k] - coordinates[i][154][k]
+                    acom[k] = coordinates[i, j, k] - coordinates[i, 154, k]
 
                 for k in range(3):
-                    coordinates[i][j][k] =\
-                        acom[0]*R[k][0] + acom[1]*R[k][1] +\
-                        acom[2]*R[k][2] + coordinates[i][154][k]
+                    coordinates[i, j, k] =\
+                        acom[0]*R[k, 0] + acom[1]*R[k, 1] +\
+                        acom[2]*R[k, 2] + coordinates[i, 154, k]
 
     return coordinates
 
@@ -695,8 +700,8 @@ def junction_builder(coord1, coord2, dup1, dup2, juncnum1, juncnum2, check):
     x2 = []
 
     for i in range(3):
-        x1.append(coord2[juncnum2][n+4][i])
-        x2.append(coord2[juncnum2][n+5][i])
+        x1.append(coord2[juncnum2, n+4, i])
+        x2.append(coord2[juncnum2, n+5, i])
 
     sum2 = distance(x1, x2)
 
@@ -715,25 +720,25 @@ def junction_builder(coord1, coord2, dup1, dup2, juncnum1, juncnum2, check):
 
             acom2 = []
             for l in range(3):
-                acom2.append(coord2[juncnum2][k][l]-coord2[juncnum2][n+5][l])
+                acom2.append(coord2[juncnum2, k, l]-coord2[juncnum2, n+5, l])
 
             for l in range(3):
-                coord2[juncnum2][k][l] = acom2[0]*R2[l][0] + \
-                    acom2[1]*R2[l][1] + acom2[2]*R2[l][2] + \
-                    coord2[juncnum2][n+5][l]
+                coord2[juncnum2, k, l] = acom2[0]*R2[l, 0] + \
+                    acom2[1]*R2[l, 1] + acom2[2]*R2[l, 2] + \
+                    coord2[juncnum2, n+5, l]
 
         c1 = []
         c2 = []
         for i in range(3):
-            c1.append(coord1[juncnum1][m][i])
-            c2.append(coord2[juncnum2][n][i])
+            c1.append(coord1[juncnum1, m, i])
+            c2.append(coord2[juncnum2, n, i])
         dist1 = distance(c1, c2)
 
     x1 = []
     x2 = []
     for i in range(3):
-        x1.append(coord2[juncnum2][n+3][i])
-        x2.append(coord2[juncnum2][n+4][i])
+        x1.append(coord2[juncnum2, n+3, i])
+        x2.append(coord2[juncnum2, n+4, i])
     sum = distance(x1, x2)
 
     unit = []
@@ -753,41 +758,42 @@ def junction_builder(coord1, coord2, dup1, dup2, juncnum1, juncnum2, check):
 
             acom2 = []
             for l in range(3):
-                acom2.append(coord2[juncnum2][k][l]-coord2[juncnum2][n+4][l])
+                acom2.append(coord2[juncnum2, k, l]-coord2[juncnum2, n+4, l])
 
             for l in range(3):
-                coord2[juncnum2][k][l] = acom2[0]*R[l][0] +\
-                    acom2[1]*R[l][1] + acom2[2]*R[l][2] +\
-                    coord2[juncnum2][n+4][l]
+                coord2[juncnum2, k, l] = acom2[0]*R[l, 0] +\
+                    acom2[1]*R[l, 1] + acom2[2]*R[l, 2] +\
+                    coord2[juncnum2, n+4, l]
 
         c1 = []
         c2 = []
         for i in range(3):
-            c1.append(coord1[juncnum1][m][i])
-            c2.append(coord2[juncnum2][n][i])
+            c1.append(coord1[juncnum1, m, i])
+            c2.append(coord2[juncnum2, n, i])
         dist1 = distance(c1, c2)
 
 
 def makedxtile(coord1, coord2, dup1, dup2, junction):
     bin = 11.
-    junction_bond = [0. for x in range(4)]
-    moving_distance = [0. for x in range(3)]
+    junction_bond = np.zeros(4)
+    moving_distance = np.zeros(3)
     # bondrange = 1.9
 
     for m in range(3):
 
-        md1 = coord1[junction[0]][8][m]
-        md2 = coord2[junction[0]][29][m]
-        md3 = coord1[junction[1]][8][m]
-        md4 = coord2[junction[1]][29][m]
-        md5 = coord1[junction[2]][29][m]
-        md6 = coord2[junction[2]][8][m]
-        md7 = coord1[junction[3]][29][m]
-        md8 = coord2[junction[3]][8][m]
+        md1 = coord1[junction[0], 8, m]
+        md2 = coord2[junction[0], 29, m]
+        md3 = coord1[junction[1], 8, m]
+        md4 = coord2[junction[1], 29, m]
+        md5 = coord1[junction[2], 29, m]
+        md6 = coord2[junction[2], 8, m]
+        md7 = coord1[junction[3], 29, m]
+        md8 = coord2[junction[3], 8, m]
 
         moving_distance[m] = md1+md3+md5+md7-(md2+md4+md6+md8)
 
-    md_sum = distance(moving_distance, [0., 0., 0.])
+#    md_sum = distance(moving_distance, [0., 0., 0.])
+    md_sum = np.linalg.norm(moving_distance)
 
     for n in range(3):
 
@@ -797,8 +803,8 @@ def makedxtile(coord1, coord2, dup1, dup2, junction):
     for i in range(STACK_NUM):
         for j in range(164):
             for k in range(3):
-                coord1[i][j][k] -= moving_distance[k]
-                coord2[i][j][k] += moving_distance[k]
+                coord1[i, j, k] -= moving_distance[k]
+                coord2[i, j, k] += moving_distance[k]
 
     junction_builder(
         coord1, coord2, dup1, dup2, junction[0], junction[0], 53)
@@ -863,8 +869,8 @@ def makedxtile(coord1, coord2, dup1, dup2, junction):
         x1 = []
         x2 = []
         for j in range(3):
-            x1.append(coord1[junction[i]][m][j])
-            x2.append(coord2[junction[i]][n][j])
+            x1.append(coord1[junction[i], m, j])
+            x2.append(coord2[junction[i], n, j])
 
         junction_bond[i] = distance(x1, x2)
 
@@ -875,8 +881,8 @@ def makedxtile(coord1, coord2, dup1, dup2, junction):
         for j in range(164):
             for k in range(3):
 
-                coord2[i][j][k] -= 0.1*moving_distance[k]
-                coord1[i][j][k] += 0.1*moving_distance[k]
+                coord2[i, j, k] -= 0.1*moving_distance[k]
+                coord1[i, j, k] += 0.1*moving_distance[k]
 
     for i in range(4):
         if i == 0:
@@ -959,8 +965,8 @@ def makedxtile(coord1, coord2, dup1, dup2, junction):
         x1 = []
         x2 = []
         for j in range(3):
-            x1.append(coord1[junction[i]][m][j])
-            x2.append(coord2[junction[i]][n][j])
+            x1.append(coord1[junction[i], m, j])
+            x2.append(coord2[junction[i], n, j])
         junction_bond[i] = distance(x1, x2)
 
     return coord1, coord2, moving_distance
@@ -970,26 +976,26 @@ if __name__ == '__main__':
 
     ############################################################
     # initialize parameters
-    omega = [0. for i in range(STACK_NUM)]
-    rho = [0. for i in range(STACK_NUM)]
-    tau = [0. for i in range(STACK_NUM)]
-    slide = [0. for i in range(STACK_NUM)]
-    axis1 = [[0. for i in range(3)] for j in range(STACK_NUM)]
-    axis2 = [[0. for i in range(3)] for j in range(STACK_NUM)]
-    mvdist = [0. for i in range(3)]
+    omega = np.zeros(STACK_NUM)
+    rho = np.zeros(STACK_NUM)
+    tau = np.zeros(STACK_NUM)
+    slide = np.zeros(STACK_NUM)
+    axis1 = np.zeros((STACK_NUM, 3))
+    axis2 = np.zeros((STACK_NUM, 3))
+    mvdist = np.zeros(3)
 
-    junction = [12, 13, 28, 29]
+    junction = np.array([12, 13, 28, 29])
     ############################################################
     coord1 = fbp_pos()
-    coord2 = fbp_pos()
-    coord3 = fbp_pos()
-    coord4 = fbp_pos()
-    coord5 = fbp_pos()
-    coord6 = fbp_pos()
-    hpcoord1 = fbp_pos()
-    hpcoord2 = fbp_pos()
-    hpcoord3 = fbp_pos()
-    hpcoord4 = fbp_pos()
+    coord2 = np.copy(coord1)
+    coord3 = np.copy(coord1)
+    coord4 = np.copy(coord1)
+    coord5 = np.copy(coord1)
+    coord6 = np.copy(coord1)
+    hpcoord1 = np.copy(coord1)
+    hpcoord2 = np.copy(coord1)
+    hpcoord3 = np.copy(coord1)
+    hpcoord4 = np.copy(coord1)
 
     if tiletype[0] == 'S' or tiletype[0] == 'C':
         #######################################################################
@@ -1167,19 +1173,19 @@ if __name__ == '__main__':
 
         for i in range(STACK_NUM):
             for j in range(3):
-                axis1[i][j] -= mvdist[j]
-                axis2[i][j] += mvdist[j]
+                axis1[i, j] -= mvdist[j]
+                axis2[i, j] += mvdist[j]
 
         transvec = []
-        transvec.append(axis2[-5][0]-axis1[0][0])
-        transvec.append(axis2[-5][1]-axis1[0][1])
-        transvec.append(axis2[-5][2]-axis1[0][2])
+        transvec.append(axis2[-5, 0] - axis1[0, 0])
+        transvec.append(axis2[-5, 1] - axis1[0, 1])
+        transvec.append(axis2[-5, 2] - axis1[0, 2])
 #        for i in range(3):
-#            transvec.append(axis1[-5][i]-axis2[-1][i])
+#            transvec.append(axis1[-5, i]-axis2[-1, i])
 
         # line = []
         # for i in range(3):
-        #     line.append(axis1[0][i]-axis2[0][i])
+        #     line.append(axis1[0, i]-axis2[0, i])
         # linemag=distance(line,[0.,0.,0.])
         # for i in range(3):
         #     line[i] /= linemag
@@ -1241,19 +1247,19 @@ if __name__ == '__main__':
 
         for i in range(STACK_NUM):
             for j in range(3):
-                axis1[i][j] -= mvdist[j]
-                axis2[i][j] += mvdist[j]
+                axis1[i, j] -= mvdist[j]
+                axis2[i, j] += mvdist[j]
 
         transvec = []
         transvec.append(0.)
         transvec.append(0.)
         transvec.append(1.)
 #        for i in range(3):
-#            transvec.append(axis1[-5][i]-axis2[-1][i])
+#            transvec.append(axis1[-5, i]-axis2[-1, i])
 
         # line = []
         # for i in range(3):
-        #     line.append(axis1[0][i]-axis2[0][i])
+        #     line.append(axis1[0, i]-axis2[0, i])
         # linemag=distance(line,[0.,0.,0.])
         # for i in range(3):
         #     line[i] /= linemag

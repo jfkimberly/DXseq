@@ -15,11 +15,11 @@ import string
 # global variables
 k = 1
 m = 1
-junction = [12, 13, 28, 29]
+junction = np.array([12, 13, 28, 29])
 
 # add extra junctions for 2 connected DX tiles
 if tiletype[0] == 'M':
-    junction += [49, 50, 65, 66]
+    junction += np.array([49, 50, 65, 66])
 
 # remove existing pdb files if they exist
 if os.path.exists(DIR + r'/' + tiletype + '.pdb'):
@@ -436,24 +436,24 @@ def Dvectorout(axis1, axis2, dup1, dup2):
     Dvector = open("Dvector_" + tiletype + ".txt", 'w')
     Dcomp = open("Dcomp_" + tiletype + ".txt", 'w')
 
-    origin = [0., 0., 0.]
-    avec = [0. for x in range(3)]
-    bvec = [0. for x in range(3)]
-    abvec = [0. for x in range(3)]
-    cvec = [0. for x in range(3)]
-    dvec = [0. for x in range(3)]
+    origin = np.zeros(3)
+    avec = np.zeros(3)
+    bvec = np.zeros(3)
+    abvec = np.zeros(3)
+    cvec = np.zeros(3)
+    dvec = np.zeros(3)
 
     # define B-vector, difference of axes positions of the
     # first base pairs between the two positions.
     for comp in range(3):
-        bvec[comp] = axis2[0][comp] - axis1[0][comp]
+        bvec[comp] = axis2[0, comp] - axis1[0, comp]
 
     for base in range(1, STACK_NUM-5):
 
         for comp in range(3):
-            avec[comp] = axis1[base][comp] - axis1[0][comp]
+            avec[comp] = axis1[base, comp] - axis1[0, comp]
             abvec[comp] = avec[comp] + bvec[comp]
-            cvec[comp] = axis2[base][comp] - axis1[0][comp]
+            cvec[comp] = axis2[base, comp] - axis1[0, comp]
             dvec[comp] = cvec[comp] - abvec[comp]
 
         dist = distance(dvec, origin)
