@@ -1,11 +1,13 @@
 #!/usr/bin/python
-
-from math import *
-from linalg import *
-from output import *
-import numpy as np
-import sys
+import argparse
 import os
+import string
+from math import *
+
+import numpy as np
+
+from linalg import *
+#from output import *
 
 # globally defined constants
 STACK_NUM = 42  # length of base pair/ length of cylinder
@@ -17,33 +19,91 @@ TAU_ZERO = 0.
 SLIDE_ZERO = 0.2
 JNUM = 4
 DIR = os.getcwd()
+k = 1
+m = 1
+junction = np.array([12, 13, 28, 29])
+
 
 ###############################################################################
 # read-in strand sequence
-args = sys.argv[1:]
-if args[0]:
-    tiletype = args[0][1:]  # remove '-' in front of argument
-if args[1]:
-    tiletype2 = args[1][1:]
-if len(args) == 3:
-    curvature = True
-else:
-    curvature = False
+parser = argparse.ArgumentParser(description="produces PDB files of different \
+types of DX tiles with/without hairpins",
+                                 formatter_class=argparse.RawTextHelpFormatter)
 
+parser.add_argument("tiletype", choices=['CR', 'STL', 'DTL', 'MDX'],
+                    help="""choose between CR, STL, DTL, and MDX tile types.
+CR : a single CR-type DX tile
+STL: two DX tiles
+DTL: three DX tiles
+MDX: two connected regular DX tiles""")
+
+#parser.add_argument("DTL", action="store_false", help="three DX tiles")
+#parser.add_argument("MDX", action="store_false", help="two connected \
+#regular DX tiles")
+
+parser.add_argument("-o", "--options", default='OO',
+                    choices=['OO', 'OX', 'XO', 'XX'],
+                    help="""OO : complementarity &\
+ geometric compatibility (default)
+OX : complementarity & geometric incompatibility
+XO : noncomplementarity & geometric compatibility
+XX : noncomplementarity & geometric incompatibility
+""")
+#parser.add_argument("-OX",
+#                    help="complementarity & geometric incompatibility")
+#parser.add_argument("-XO",
+#                    help="noncomplementarity & geometric compatibility")
+#parser.add_argument("-XX",
+#                    help="noncomplementarity & geometric incompatibility")
+
+# parser.add_argument("-CR1", action="store_true", help="a single CR1 DX tile")
+# parser.add_argument("-CR2", action="store_true", help="a single CR2 DX tile")
+# parser.add_argument("-CR3", action="store_true", help="a single CR3 DX tile")
+# parser.add_argument("-CR4", action="store_true", help="a single CR4 DX tile")
+# parser.add_argument("-STLOO", action="store_true", help="two DX tiles with \
+# complementarity & geometric compatibility")
+
+parser.add_argument("-c", "--curvature", action="store_true",
+                    help="""use experimental X-ray data for each nucleotide position
+instead of idealized values""")
+
+
+args = parser.parse_args()
+
+if args.tiletype == 'STL':
+    tiletype = 'STL' + args.options
+    tiletype2 = None
+
+elif args.tiletype == 'DTL':
+    tiletype = 'DTL' + args.options + '-1'
+    tiletype2 = 'DTL' + args.options + '-2'
+
+elif args.tiletype == 'CR':
+    tiletype = 'CR1'
+    tiletype2 = None
+
+elif args.tiletype == 'MDX':
+    tiletype = 'MDX1'
+    tiletype2 = None
+
+# remove existing pdb files if they exist
+if os.path.exists(DIR + r'/' + tiletype + '.pdb'):
+    os.remove(tiletype + '.pdb')
+
+pdbfile = open(tiletype + ".pdb", "a")
+
+###############################################################################
 
 seq = []
+
 with open(DIR + r"/DATA/sequence.txt") as seqfile:
     for line in seqfile:
         seq.append(line.rstrip())
 
-
-# length of base pairs for 2 connected DX tiles
-# if tiletype[0] == 'M': STACK_NUM = 79
-
 dup1 = seq[seq.index(tiletype)+1]
 dup2 = seq[seq.index(tiletype)+2]
 
-if tiletype[0] == 'M' or tiletype[0] == 'F':
+if tiletype[0] == 'M':
     dup3 = seq[seq.index(tiletype)+3]
     dup4 = seq[seq.index(tiletype)+4]
 
@@ -286,7 +346,7 @@ def caseselect(duplex, omega, rho, tau, slide):
         elif duplex_c == "YGCR":
             casenum = 35
 
-        if curvature:
+        if args.curvature:
             omega[i+1] = OMEGA_ZERO+omegatable[casenum]*PI
             rho[i+1] = RHO_ZERO+rhotable[casenum]*PI
             tau[i+1] = TAU_ZERO+tautable[casenum]*PI
@@ -972,6 +1032,406 @@ def makedxtile(coord1, coord2, dup1, dup2, junction):
     return coord1, coord2, moving_distance
 
 
+def filewrite(coord, init_atomnum, fin_atomnum, strdnum, base, norm, i):
+
+    global k, m
+
+    if norm:
+        for j in range(init_atomnum, fin_atomnum):
+
+            pdbfile.write(('ATOM' + ' '*2 + '%5d' + ' '*2 + '%-3s' + ' '*3 +
+                           '%s' + ' ' + '%1s%4d' + ' '*4 + '%8.3f'*3 + ' '*2 +
+                           '1.00' + ' '*2 + '0.00' + ' '*11 + '%s\n') %
+                          (k, atom_name[j], base, strdnum, m, coord[i, j, 0],
+                           coord[i, j, 1], coord[i, j, 2], atom_name[j][0]))
+
+            k += 1
+        m += 1
+
+    else:
+        if base == 'A':
+            base = 'T'
+        elif base == 'G':
+            base = 'C'
+        elif base == 'C':
+            base = 'G'
+        elif base == 'T':
+            base = 'A'
+
+        for j in range(init_atomnum, fin_atomnum):
+
+            pdbfile.write(('ATOM' + ' '*2 + '%5d' + ' '*2 + '%-3s' + ' '*3 +
+                           '%s' + ' ' + '%1s%4d' + ' '*4 + '%8.3f'*3 + ' '*2 +
+                           '1.00' + ' '*2 + '0.00' + ' '*11 + '%s\n') %
+                          (k, atom_name[j], base, strdnum, m, coord[i,j,0],
+                           coord[i,j,1], coord[i,j,2], atom_name[j][0]))
+
+            k += 1
+        m += 1
+
+
+def DXoutput(coord1, coord2, tilenum, hpcoord1, hpcoord2, strdnum):
+
+    # map letters to numbers
+    for i in range(len(string.lowercase)):
+        if strdnum == string.lowercase[i]:
+            strdnum2 = i+1
+
+    if strdnum2 % 4 == 1:
+
+        # strand 1
+        # first sequence
+        ibasenum = 0
+        fbasenum = junction[1]
+        inc = 1
+        i = ibasenum
+
+        for base in dup1[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord1, 0, 21, strdnum, base, True, i)
+            elif base == 'G':
+                filewrite(coord1, 41, 63, strdnum, base, True, i)
+            elif base == 'C':
+                filewrite(coord1, 82, 101, strdnum, base, True, i)
+            elif base == 'T':
+                filewrite(coord1, 123, 143, strdnum, base, True, i)
+            i += inc
+
+        # strand 1
+        # second sequence
+        ibasenum = junction[0]
+        fbasenum = None
+        inc = -1
+        i = ibasenum
+
+        if (tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2')\
+           and tilenum == 'B':
+
+            ibasenum = junction[0]
+            fbasenum = 4
+            inc = -1
+            i = ibasenum
+
+        for base in dup2[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord2, 21, 41, strdnum, base, False, i)
+            elif base == 'G':
+                filewrite(coord2, 63, 82, strdnum, base, False, i)
+            elif base == 'C':
+                filewrite(coord2, 101, 123, strdnum, base, False, i)
+            elif base == 'T':
+                filewrite(coord2, 143, 164, strdnum, base, False, i)
+            i += inc
+
+    elif strdnum2 % 4 == 2:
+
+        # strand 2
+        # first sequence
+        ibasenum = STACK_NUM-1
+        fbasenum = junction[2]
+        inc = -1
+        i = ibasenum
+
+        if tiletype == 'STLOX' or tiletype == 'STLXX':
+            ibasenum = STACK_NUM-6
+            fbasenum = junction[2]
+            inc = -1
+            i = ibasenum
+
+        for base in dup1[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord1, 21, 41, strdnum, base, False, i)
+            elif base == 'G':
+                filewrite(coord1, 63, 82, strdnum, base, False, i)
+            elif base == 'C':
+                filewrite(coord1, 101, 123, strdnum, base, False, i)
+            elif base == 'T':
+                filewrite(coord1, 143, 164, strdnum, base, False, i)
+            i += inc
+
+        # strand 2
+        # second sequence
+        ibasenum = junction[3]
+        fbasenum = STACK_NUM
+        inc = 1
+        i = ibasenum
+
+        if (tiletype == 'STLOX' or tiletype == 'STLXX')\
+           or ((tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2')
+               and tilenum == 'B'):
+            ibasenum = junction[3]
+            fbasenum = STACK_NUM-5
+            inc = 1
+            i = ibasenum
+
+        for base in dup2[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord2, 0, 21, strdnum, base, True, i)
+            elif base == 'G':
+                filewrite(coord2, 41, 63, strdnum, base, True, i)
+            elif base == 'C':
+                filewrite(coord2, 82, 101, strdnum, base, True, i)
+            elif base == 'T':
+                filewrite(coord2, 123, 143, strdnum, base, True, i)
+            i += inc
+
+    elif strdnum2 % 4 == 3:
+
+        # strand 3
+        # first sequence
+        ibasenum = 5
+        fbasenum = junction[3]
+        inc = 1
+        i = ibasenum
+
+        if (tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2')\
+           and tilenum == 'B':
+            ibasenum = 0
+            fbasenum = junction[3]-8
+            inc = 1
+            i = ibasenum
+
+        elif tiletype2 == 'DTLXO-2' and tilenum == 'B':
+            ibasenum = 5
+            fbasenum = junction[3]-8
+            inc = 1
+            i = ibasenum
+
+        for base in dup2[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord2, 0, 21, strdnum, base, True, i)
+            elif base == 'G':
+                filewrite(coord2, 41, 63, strdnum, base, True, i)
+            elif base == 'C':
+                filewrite(coord2, 82, 101, strdnum, base, True, i)
+            elif base == 'T':
+                filewrite(coord2, 123, 143, strdnum, base, True, i)
+            i += inc
+
+
+###############################################################################
+# hairpin1
+        if (
+                tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXO-2'
+                or tiletype2 == 'DTLXX-2'
+        ) and tilenum == 'B':
+            # 5' -> 3' up the hairpin
+
+            ibasenum = 2
+            fbasenum = 12
+            inc = 1
+            i = ibasenum
+
+            for base in hp1[ibasenum:fbasenum:inc]:
+
+                if base == 'A':
+                    filewrite(hpcoord1, 0, 21, strdnum, base, True, i)
+                elif base == 'G':
+                    filewrite(hpcoord1, 41, 63, strdnum, base, True, i)
+                elif base == 'C':
+                    filewrite(hpcoord1, 82, 101, strdnum, base, True, i)
+                elif base == 'T':
+                    filewrite(hpcoord1, 123, 143, strdnum, base, True, i)
+                i += inc
+
+            # 5' -> 3' down the hairpin
+            ibasenum = 11
+            fbasenum = None
+            inc = -1
+            i = ibasenum
+
+            for base in hp1[ibasenum:fbasenum:inc]:
+
+                if base == 'A':
+                    filewrite(hpcoord1, 21, 41, strdnum, base, False, i)
+                elif base == 'G':
+                    filewrite(hpcoord1, 63, 82, strdnum, base, False, i)
+                elif base == 'C':
+                    filewrite(hpcoord1, 101, 123, strdnum, base, False, i)
+                elif base == 'T':
+                    if i == 10 or i == 11:
+                        filewrite(hpcoord1, 143, 164, strdnum, base, True, i)
+                    else:
+                        filewrite(hpcoord1, 143, 164, strdnum, base, False, i)
+                i += inc
+
+            # end of hairpin1
+            # rest of strand
+            ibasenum = junction[3]-8
+            fbasenum = junction[3]
+            inc = 1
+            i = ibasenum
+
+            for base in dup2[ibasenum:fbasenum:inc]:
+
+                if base == 'A':
+                    filewrite(coord2, 0, 21, strdnum, base, True, i)
+                elif base == 'G':
+                    filewrite(coord2, 41, 63, strdnum, base, True, i)
+                elif base == 'C':
+                    filewrite(coord2, 82, 101, strdnum, base, True, i)
+                elif base == 'T':
+                    filewrite(coord2, 123, 143, strdnum, base, True, i)
+                i += inc
+
+###############################################################################
+
+        # strand 3
+        # second sequence
+        ibasenum = junction[2]
+        fbasenum = 4
+        inc = -1
+        i = ibasenum
+
+        for base in dup1[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord1, 21, 41, strdnum, base, False, i)
+            elif base == 'G':
+                filewrite(coord1, 63, 82, strdnum, base, False, i)
+            elif base == 'C':
+                filewrite(coord1, 101, 123, strdnum, base, False, i)
+            elif base == 'T':
+                filewrite(coord1, 143, 164, strdnum, base, False, i)
+            i += inc
+
+    elif strdnum2 % 4 == 0:
+
+        # strand 4
+        # first sequence
+        ibasenum = STACK_NUM-6
+        fbasenum = junction[0]
+        inc = -1
+        i = ibasenum
+
+        if tiletype == 'STLOX' or tiletype == 'STLXX':
+            ibasenum = STACK_NUM-1
+            fbasenum = junction[0]
+            inc = -1
+            i = ibasenum
+
+        elif (tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2')\
+                and tilenum == 'B':
+            ibasenum = STACK_NUM-1
+            fbasenum = junction[0]+8
+            inc = -1
+            i = ibasenum
+
+        elif tiletype2 == 'DTLXO-2' and tilenum == 'B':
+            ibasenum = STACK_NUM-6
+            fbasenum = junction[0]+8
+            inc = -1
+            i = ibasenum
+
+        for base in dup2[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord2, 21, 41, strdnum, base, False, i)
+            elif base == 'G':
+                filewrite(coord2, 63, 82, strdnum, base, False, i)
+            elif base == 'C':
+                filewrite(coord2, 101, 123, strdnum, base, False, i)
+            elif base == 'T':
+                filewrite(coord2, 143, 164, strdnum, base, False, i)
+            i += inc
+
+###############################################################################
+# hairpin2
+        if (
+                tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2'
+                or tiletype2 == 'DTLXO-2'
+        ) and tilenum == 'B':
+            # 5' -> 3' up the hairpin
+            ibasenum = 2
+            fbasenum = 12
+            inc = 1
+            i = ibasenum
+
+            for base in hp2[ibasenum:fbasenum:inc]:
+
+                if base == 'A':
+                    filewrite(hpcoord2, 0, 21, strdnum, base, True, i)
+                elif base == 'G':
+                    filewrite(hpcoord2, 41, 63, strdnum, base, True, i)
+                elif base == 'C':
+                    filewrite(hpcoord2, 82, 101, strdnum, base, True, i)
+                elif base == 'T':
+                    filewrite(hpcoord2, 123, 143, strdnum, base, True, i)
+                i += inc
+
+            # 5' -> 3' down the hairpin
+            ibasenum = 11
+            fbasenum = None
+            inc = -1
+            i = ibasenum
+
+            for base in hp2[ibasenum:fbasenum:inc]:
+
+                if base == 'A':
+                    filewrite(hpcoord2, 21, 41, strdnum, base, False, i)
+                elif base == 'G':
+                    filewrite(hpcoord2, 63, 82, strdnum, base, False, i)
+                elif base == 'C':
+                    filewrite(hpcoord2, 101, 123, strdnum, base, False, i)
+                elif base == 'T':
+                    if i == 10 or i == 11:
+                        filewrite(hpcoord2, 143, 164, strdnum, base, True, i)
+                    else:
+                        filewrite(hpcoord2, 143, 164, strdnum, base, False, i)
+                i += inc
+
+            # end of hairpin2
+            # rest of strand
+            ibasenum = junction[0]+8
+            fbasenum = junction[0]
+            inc = -1
+            i = ibasenum
+
+            for base in dup2[ibasenum:fbasenum:inc]:
+                if base == 'A':
+                    filewrite(coord2, 21, 41, strdnum, base, False, i)
+                elif base == 'G':
+                    filewrite(coord2, 63, 82, strdnum, base, False, i)
+                elif base == 'C':
+                    filewrite(coord2, 101, 123, strdnum, base, False, i)
+                elif base == 'T':
+                    filewrite(coord2, 143, 164, strdnum, base, False, i)
+                i += inc
+
+###############################################################################
+
+        # strand 4
+        # second sequence
+        ibasenum = junction[1]
+        fbasenum = STACK_NUM-5
+        inc = 1
+        i = ibasenum
+
+        if tiletype == 'STLOX' or tiletype == 'STLXX':
+            ibasenum = junction[1]
+            fbasenum = STACK_NUM
+            inc = 1
+            i = ibasenum
+
+        for base in dup1[ibasenum:fbasenum:inc]:
+
+            if base == 'A':
+                filewrite(coord1, 0, 21, strdnum, base, True, i)
+            elif base == 'G':
+                filewrite(coord1, 41, 63, strdnum, base, True, i)
+            elif base == 'C':
+                filewrite(coord1, 82, 101, strdnum, base, True, i)
+            elif base == 'T':
+                filewrite(coord1, 123, 143, strdnum, base, True, i)
+            i += inc
+
+
+
 if __name__ == '__main__':
 
     ############################################################
@@ -986,18 +1446,16 @@ if __name__ == '__main__':
 
     junction = np.array([12, 13, 28, 29])
     ############################################################
-    coord1 = fbp_pos()
-    coord2 = np.copy(coord1)
-    coord3 = np.copy(coord1)
-    coord4 = np.copy(coord1)
-    coord5 = np.copy(coord1)
-    coord6 = np.copy(coord1)
-    hpcoord1 = np.copy(coord1)
-    hpcoord2 = np.copy(coord1)
-    hpcoord3 = np.copy(coord1)
-    hpcoord4 = np.copy(coord1)
+    original_coord = fbp_pos()
+    coord1 = np.copy(original_coord)
+    coord2 = np.copy(original_coord)
+    hpcoord1 = np.copy(original_coord)
+    hpcoord2 = np.copy(original_coord)
+    hpcoord3 = np.copy(original_coord)
+    hpcoord4 = np.copy(original_coord)
 
     if tiletype[0] == 'S' or tiletype[0] == 'C':
+
         #######################################################################
         duplexnum = 1
         omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
@@ -1018,6 +1476,9 @@ if __name__ == '__main__':
         #######################################################################
 
         if tiletype[0] != 'C':
+            coord3 = np.copy(original_coord)
+            coord4 = np.copy(original_coord)
+
             duplexnum = 1
             omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
             coordinates, axis1 = calculate(
@@ -1068,6 +1529,9 @@ if __name__ == '__main__':
         coord1, coord2, mvdist =\
             makedxtile(coord1, coord2, dup1, dup2, junction)
 
+        coord3 = np.copy(original_coord)
+        coord4 = np.copy(original_coord)
+
         duplexnum = 1
         omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
         coordinates, axis1 = calculate(coord3, omega, rho, tau, slide, axis1)
@@ -1084,6 +1548,9 @@ if __name__ == '__main__':
 
         coord3, coord4, mvdist =\
             makedxtile(coord3, coord4, dup1, dup2, junction)
+
+        coord5 = np.copy(original_coord)
+        coord6 = np.copy(original_coord)
 
         duplexnum = 1
         omega, rho, tau, slide = caseselect(dup3, omega, rho, tau, slide)
@@ -1195,6 +1662,9 @@ if __name__ == '__main__':
         # coord1=rotRz(coord1,rotangle)
         # coord2=rotRz(coord2,rotangle)
 
+        coord3 = np.copy(original_coord)
+        coord4 = np.copy(original_coord)
+
         duplexnum = 1
         omega, rho, tau, slide = caseselect(dup3, omega, rho, tau, slide)
         coordinates, axis1 = calculate(coord3, omega, rho, tau, slide, axis1)
@@ -1217,71 +1687,6 @@ if __name__ == '__main__':
         #
         # coord3=Tx(coord3,0.)
         # coord4=Tx(coord4,0.)
-
-        # A tile
-        tilenum = 'A'
-        DXoutput(coord1, coord2, tilenum, None, None, 'a')
-        DXoutput(coord1, coord2, tilenum, None, None, 'b')
-        DXoutput(coord1, coord2, tilenum, None, None, 'c')
-        DXoutput(coord1, coord2, tilenum, None, None, 'd')
-
-        # B tile
-        tilenum = 'B'
-        DXoutput(coord3, coord4, tilenum, None, None, 'e')
-        DXoutput(coord3, coord4, tilenum, None, None, 'f')
-        DXoutput(coord3, coord4, tilenum, None, None, 'g')
-        DXoutput(coord3, coord4, tilenum, None, None, 'h')
-        #######################################################################
-
-    if tiletype[0] == 'F':
-
-        duplexnum = 1
-        omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
-        coordinates, axis1 = calculate(coord1, omega, rho, tau, slide, axis1)
-        coord1 = backbone_modify(dup1, coordinates, duplexnum)
-
-        duplexnum = 2
-        omega, rho, tau, slide = caseselect(dup2, omega, rho, tau, slide)
-        coordinates2, axis2 = calculate(coord2, omega, rho, tau, slide, axis2)
-        coord2 = backbone_modify(dup2, coordinates2, duplexnum)
-
-        for i in range(STACK_NUM):
-            for j in range(3):
-                axis1[i, j] -= mvdist[j]
-                axis2[i, j] += mvdist[j]
-
-        transvec = []
-        transvec.append(0.)
-        transvec.append(0.)
-        transvec.append(1.)
-#        for i in range(3):
-#            transvec.append(axis1[-5, i]-axis2[-1, i])
-
-        # line = []
-        # for i in range(3):
-        #     line.append(axis1[0, i]-axis2[0, i])
-        # linemag=distance(line,[0.,0.,0.])
-        # for i in range(3):
-        #     line[i] /= linemag
-        #
-        # rotangle=acos(line[0])
-        #
-        # coord1=rotRz(coord1,rotangle)
-        # coord2=rotRz(coord2,rotangle)
-
-        duplexnum = 1
-        omega, rho, tau, slide = caseselect(dup3, omega, rho, tau, slide)
-        coordinates, axis1 = calculate(coord3, omega, rho, tau, slide, axis1)
-        coord3 = backbone_modify(dup3, coordinates, duplexnum)
-        coord3 = rotateRz(coord3)
-        coord3 = tiletrans(coord3, transvec)
-
-        duplexnum = 2
-        omega, rho, tau, slide = caseselect(dup4, omega, rho, tau, slide)
-        coordinates2, axis2 = calculate(coord4, omega, rho, tau, slide, axis2)
-        coord4 = backbone_modify(dup4, coordinates2, duplexnum)
-        coord4 = rotateRz(coord4)
-        coord4 = tiletrans(coord4, transvec)
 
         # A tile
         tilenum = 'A'
