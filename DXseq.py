@@ -7,7 +7,6 @@ from math import *
 import numpy as np
 
 from linalg import *
-#from output import *
 
 # globally defined constants
 STACK_NUM = 42  # length of base pair/ length of cylinder
@@ -23,12 +22,12 @@ k = 1
 m = 1
 junction = np.array([12, 13, 28, 29])
 
-
 ###############################################################################
 # read-in strand sequence
 parser = argparse.ArgumentParser(description="produces PDB files of different \
 types of DX tiles with/without hairpins",
                                  formatter_class=argparse.RawTextHelpFormatter)
+
 
 parser.add_argument("tiletype", choices=['CR', 'STL', 'DTL', 'MDX'],
                     help="""choose between CR, STL, DTL, and MDX tile types.
@@ -37,9 +36,6 @@ STL: two DX tiles
 DTL: three DX tiles
 MDX: two connected regular DX tiles""")
 
-#parser.add_argument("DTL", action="store_false", help="three DX tiles")
-#parser.add_argument("MDX", action="store_false", help="two connected \
-#regular DX tiles")
 
 parser.add_argument("-o", "--options", default='OO',
                     choices=['OO', 'OX', 'XO', 'XX'],
@@ -49,19 +45,7 @@ OX : complementarity & geometric incompatibility
 XO : noncomplementarity & geometric compatibility
 XX : noncomplementarity & geometric incompatibility
 """)
-#parser.add_argument("-OX",
-#                    help="complementarity & geometric incompatibility")
-#parser.add_argument("-XO",
-#                    help="noncomplementarity & geometric compatibility")
-#parser.add_argument("-XX",
-#                    help="noncomplementarity & geometric incompatibility")
 
-# parser.add_argument("-CR1", action="store_true", help="a single CR1 DX tile")
-# parser.add_argument("-CR2", action="store_true", help="a single CR2 DX tile")
-# parser.add_argument("-CR3", action="store_true", help="a single CR3 DX tile")
-# parser.add_argument("-CR4", action="store_true", help="a single CR4 DX tile")
-# parser.add_argument("-STLOO", action="store_true", help="two DX tiles with \
-# complementarity & geometric compatibility")
 
 parser.add_argument("-c", "--curvature", action="store_true",
                     help="""use experimental X-ray data for each nucleotide position
@@ -93,6 +77,7 @@ if os.path.exists(DIR + r'/' + tiletype + '.pdb'):
 pdbfile = open(tiletype + ".pdb", "a")
 
 ###############################################################################
+# assign strand sequences to duplexes
 
 seq = []
 
@@ -131,6 +116,7 @@ if tiletype[0] == 'D':
 
 ###############################################################################
 # read-in parameters(omega,rho,tau,slide) of each base pairs
+
 omegatable = []
 rhotable = []
 tautable = []
@@ -167,9 +153,6 @@ def fbp_pos():
 
     """
 
-    # read-in coordinates of all atoms of each complements
-#    coordinates = [[[0. for k in range(3)] for j in range(164)]
-#                   for i in range(STACK_NUM)]
     coordinates = np.zeros((STACK_NUM, 164, 3))
     temp_coordinates = []
 
@@ -406,7 +389,7 @@ def backbone_modify(duplex, coordinates, duplexnum):
             for j in range(3):
                 distcom[j] = coordinates[i, 10, j]-coordinates[i, 11, j]
 
-            #sum = distance(distcom, np.zeros(3))
+            # sum = distance(distcom, np.zeros(3))
             sum = np.linalg.norm(distcom)
 
             unit = []
@@ -1063,8 +1046,8 @@ def filewrite(coord, init_atomnum, fin_atomnum, strdnum, base, norm, i):
             pdbfile.write(('ATOM' + ' '*2 + '%5d' + ' '*2 + '%-3s' + ' '*3 +
                            '%s' + ' ' + '%1s%4d' + ' '*4 + '%8.3f'*3 + ' '*2 +
                            '1.00' + ' '*2 + '0.00' + ' '*11 + '%s\n') %
-                          (k, atom_name[j], base, strdnum, m, coord[i,j,0],
-                           coord[i,j,1], coord[i,j,2], atom_name[j][0]))
+                          (k, atom_name[j], base, strdnum, m, coord[i, j, 0],
+                           coord[i, j, 1], coord[i, j, 2], atom_name[j][0]))
 
             k += 1
         m += 1
@@ -1431,7 +1414,6 @@ def DXoutput(coord1, coord2, tilenum, hpcoord1, hpcoord2, strdnum):
             i += inc
 
 
-
 if __name__ == '__main__':
 
     ############################################################
@@ -1647,20 +1629,6 @@ if __name__ == '__main__':
         transvec.append(axis2[-5, 0] - axis1[0, 0])
         transvec.append(axis2[-5, 1] - axis1[0, 1])
         transvec.append(axis2[-5, 2] - axis1[0, 2])
-#        for i in range(3):
-#            transvec.append(axis1[-5, i]-axis2[-1, i])
-
-        # line = []
-        # for i in range(3):
-        #     line.append(axis1[0, i]-axis2[0, i])
-        # linemag=distance(line,[0.,0.,0.])
-        # for i in range(3):
-        #     line[i] /= linemag
-        #
-        # rotangle=acos(line[0])
-        #
-        # coord1=rotRz(coord1,rotangle)
-        # coord2=rotRz(coord2,rotangle)
 
         coord3 = np.copy(original_coord)
         coord4 = np.copy(original_coord)
@@ -1681,12 +1649,6 @@ if __name__ == '__main__':
 
         coord3, coord4, mvdist =\
             makedxtile(coord3, coord4, dup3, dup4, junction)
-
-        # coord3=rotRz(coord3,rotangle)
-        # coord4=rotRz(coord4,rotangle)
-        #
-        # coord3=Tx(coord3,0.)
-        # coord4=Tx(coord4,0.)
 
         # A tile
         tilenum = 'A'

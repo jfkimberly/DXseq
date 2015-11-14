@@ -269,6 +269,4 @@ def Tx(coord, dist):
 
 if __name__ == '__main__':
 
-    mat = [[1., 2., 3.]]
-    mat = transpose(mat)
-#    print hp_rot(pi, pi, pi, mat)
+    pass
