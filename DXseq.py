@@ -31,10 +31,10 @@ types of DX tiles with/without hairpins",
 
 parser.add_argument("tiletype", choices=['CR', 'STL', 'DTL', 'MDX'],
                     help="""choose between CR, STL, DTL, and MDX tile types.
-CR : a single CR-type DX tile
-STL: two DX tiles
-DTL: three DX tiles
-MDX: two connected regular DX tiles""")
+CR  : a single CR-type DX tile
+STL : two DX tiles
+DTL : three DX tiles
+MDX : two connected regular DX tiles""")
 
 
 parser.add_argument("-o", "--options", default='OO',
@@ -1451,11 +1451,6 @@ if __name__ == '__main__':
 
         coord1, coord2, mvdist =\
             makedxtile(coord1, coord2, dup1, dup2, junction)
-
-        #######################################################################
-        if tiletype[0] == 'C':
-            Dvectorout(axis1, axis2, dup1, dup2)
-        #######################################################################
 
         if tiletype[0] != 'C':
             coord3 = np.copy(original_coord)
