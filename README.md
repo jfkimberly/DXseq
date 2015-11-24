@@ -2,7 +2,7 @@
 
 ## Introduction
 
-![img](//github.com/jfkimberly/DXseq/figures/dx-hp-mol-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.") ![img](//github.com/jfkimberly/DXseq/figures/dx-hp-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.")
+![img](figures/dx-hp-mol-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.") ![img](figures/dx-hp-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.")
 
 Want to create your own *atomically* correct double-crossover tiles? Keep
 reading!
@@ -101,9 +101,9 @@ file. For instance a rendering of the PDB file produced by the command
 
 using the [ViewerLite](http://accelrys.com/products/collaborative-science/biovia-discovery-studio/visualization-download.php) program is shown below.
 
-![img](//github.com/jfkimberly/DXseq/figures/stloo-mol-resize.gif) 
+![img](figures/stloo-mol-resize.gif) 
 
-![img](//github.com/jfkimberly/DXseq/figures/stloo-resize.gif)
+![img](figures/stloo-resize.gif)
 
 The positional arguments `STL` and `DTL` along with the optional arguments
 `-o {OO, OX, XO, XX}` produce various configurations of dimer DX tiles which
@@ -117,7 +117,7 @@ curvature of DNA due to its flexibility. When this is turned on (via the
 from the [Nucleic Acid Database](http://www.sciencedirect.com/science/article/pii/S0006349592816491). The differences between the two can be seen
 below.
 
-![img](//github.com/jfkimberly/DXseq/figures/curvature-resize.svg)
+![img](figures/curvature-resize.svg)
 
 We used this model to study the relationship between DX crystal sizes and
 the structural distortion arising from the flexibility of the DX tiles in
