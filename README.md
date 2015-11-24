@@ -117,7 +117,7 @@ curvature of DNA due to its flexibility. When this is turned on (via the
 from the [Nucleic Acid Database](http://www.sciencedirect.com/science/article/pii/S0006349592816491). The differences between the two can be seen
 below.
 
-![img](figures/curvature-resize.svg)
+![img](figures/curvature.png)
 
 We used this model to study the relationship between DX crystal sizes and
 the structural distortion arising from the flexibility of the DX tiles in
