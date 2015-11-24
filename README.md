@@ -99,6 +99,8 @@ file.
 
 ## Features
 
+### Multiple DX tiles
+
 PDBs of multiple DX tiles can be produced simultaneously using `STL`, `DTL`,
 and `MDX` commands. For instance a rendering of the PDB file produced by the
 command
@@ -114,6 +116,8 @@ using the [ViewerLite](http://accelrys.com/products/collaborative-science/biovia
 The positional arguments `STL` and `DTL` along with the optional arguments
 `-o {OO, OX, XO, XX}` produce various configurations of dimer DX tiles which
 we used in [this *ACS Nano* paper](http://pubs.acs.org/doi/abs/10.1021/nn201312g).
+
+### DNA flexibility
 
 Another feature this program offers is the calculation of the intrinsic
 curvature of DNA due to its flexibility. When this is turned on (via the
