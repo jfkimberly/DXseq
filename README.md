@@ -95,7 +95,13 @@ and the following three numbers, `7.306 2.606 -2.062`, are the *xyz* spatial
 coordinates.
 
 Use your favorite molecular viewing program to create a 3D rendering of this
-file. For instance a rendering of the PDB file produced by the command
+file. 
+
+## Features
+
+PDBs of multiple DX tiles can be produced simultaneously using `STL`, `DTL`,
+and `MDX` commands. For instance a rendering of the PDB file produced by the
+command
 
     $ python2 DXseq.py STL -o OO
 
