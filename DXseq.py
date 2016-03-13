@@ -63,7 +63,7 @@ elif args.tiletype == 'DTL':
     tiletype2 = 'DTL' + args.options + '-2'
 
 elif args.tiletype == 'CR':
-    tiletype = 'CR1'
+    tiletype = 'CR'
     tiletype2 = None
 
 elif args.tiletype == 'MDX':
