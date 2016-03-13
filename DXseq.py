@@ -67,7 +67,7 @@ elif args.tiletype == 'CR':
     tiletype2 = None
 
 elif args.tiletype == 'MDX':
-    tiletype = 'MDX1'
+    tiletype = 'MDX'
     tiletype2 = None
 
 # remove existing pdb files if they exist
