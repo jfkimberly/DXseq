@@ -238,26 +238,6 @@ def rotateRz(coord):
     return coord
 
 
-def rotRz(coord, theta):
-    """returns rotated coordinates of 'coord' around the z-axis by PI
-    i.e. coordinates for a B tile (which is Rz(pi) of an A tile)
-
-    """
-
-    for i in range(len(coord[:])):
-        for j in range(len(coord[0, :])):
-            colvec = transpose([coord[i, j]])
-            # colvec = mm_mul(Rx(pi/50.), colvec)
-            # temp_coord = mm_mul(Ry(-pi/30.), temp_coord)
-            temp_coord = np.dot(Rz(theta), colvec)
-
-            # flatten list; tranpose column to row vector
-            coord[i, j] = [item for sublist in transpose(temp_coord)
-                           for item in sublist]
-
-    return coord
-
-
 def Tx(coord, dist):
     """returns 'coord' translated in the x-direction by 'dist' """
 
