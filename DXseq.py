@@ -8,11 +8,12 @@ import numpy as np
 
 from linalg import *
 
+
 # globally defined constants
 STACK_NUM = 42  # length of base pair/ length of cylinder
 RISE_ZERO = 3.4
 PI = pi/180.
-OMEGA_ZERO = 720.*PI/21.
+
 RHO_ZERO = PI
 TAU_ZERO = 0.
 SLIDE_ZERO = 0.2
@@ -20,7 +21,7 @@ JNUM = 4
 DIR = os.getcwd()
 k = 1
 m = 1
-junction = np.array([12, 13, 28, 29])
+#junction = np.array([12, 13, 28, 29])
 
 ###############################################################################
 # read-in strand sequence
@@ -71,10 +72,10 @@ elif args.tiletype == 'MDX':
     tiletype2 = None
 
 # remove existing pdb files if they exist
-if os.path.exists(DIR + r'/' + tiletype + '.pdb'):
-    os.remove(tiletype + '.pdb')
-
-pdbfile = open(tiletype + ".pdb", "a")
+#if os.path.exists(DIR + r'/' + tiletype + '.pdb'):
+#    os.remove(tiletype + '.pdb')
+# 
+#pdbfile = open(tiletype + ".pdb", "a")
 
 ###############################################################################
 # assign strand sequences to duplexes
@@ -364,10 +365,7 @@ def backbone_modify(duplex, coordinates, duplexnum):
     R = np.identity(3, float)
     STACK_NUM = 7
     distcom = np.zeros(3)
-    unit = []
     acom = np.zeros(3)
-
-    # 'unit' is a unit vector along the rotation axis
 
     # iterate over all base pairs
     # from 5' -> 3' up one side of the backbone
@@ -392,6 +390,7 @@ def backbone_modify(duplex, coordinates, duplexnum):
             # sum = distance(distcom, np.zeros(3))
             sum = np.linalg.norm(distcom)
 
+            # 'unit' is a unit vector along the rotation axis
             unit = []
             for j in distcom:
                 unit.append(j/sum)
@@ -1083,20 +1082,19 @@ def DXoutput(coord1, coord2, tilenum, hpcoord1, hpcoord2, strdnum):
 
         # strand 1
         # second sequence
-        ibasenum = junction[0]
-        fbasenum = None
-        inc = -1
+#        ibasenum = junction[0]
+#        fbasenum = None
+#        inc = -1
+#        i = ibasenum
+
+        ibasenum = 0
+        fbasenum = junction[1]
+        inc = 1
         i = ibasenum
 
-        if (tiletype2 == 'DTLOX-2' or tiletype2 == 'DTLXX-2')\
-           and tilenum == 'B':
+        strdnum = '2'
 
-            ibasenum = junction[0]
-            fbasenum = 4
-            inc = -1
-            i = ibasenum
-
-        for base in dup2[ibasenum:fbasenum:inc]:
+        for base in dup1[ibasenum:fbasenum:inc]:
 
             if base == 'A':
                 filewrite(coord2, 21, 41, strdnum, base, False, i)
@@ -1426,7 +1424,9 @@ if __name__ == '__main__':
     axis2 = np.zeros((STACK_NUM, 3))
     mvdist = np.zeros(3)
 
-    junction = np.array([12, 13, 28, 29])
+    junction = np.array([22, 23, 28, 29])
+
+
     ############################################################
     original_coord = fbp_pos()
     coord1 = np.copy(original_coord)
@@ -1439,48 +1439,38 @@ if __name__ == '__main__':
     if tiletype[0] == 'S' or tiletype[0] == 'C':
 
         #######################################################################
+        OMEGA_ZERO = 720.*PI/21.  # used in caseselect function
         duplexnum = 1
         omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
         coordinates, axis1 = calculate(coord1, omega, rho, tau, slide, axis1)
         coord1 = backbone_modify(dup1, coordinates, duplexnum)
 
-        duplexnum = 2
-        omega, rho, tau, slide = caseselect(dup2, omega, rho, tau, slide)
+        OMEGA_ZERO = -720.*PI/21.
+        duplexnum = 1
+        omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
         coordinates2, axis2 = calculate(coord2, omega, rho, tau, slide, axis2)
-        coord2 = backbone_modify(dup2, coordinates2, duplexnum)
+        coord2 = backbone_modify(dup1, coordinates2, duplexnum)
 
-        coord1, coord2, mvdist =\
-            makedxtile(coord1, coord2, dup1, dup2, junction)
-
-        if tiletype[0] != 'C':
-            coord3 = np.copy(original_coord)
-            coord4 = np.copy(original_coord)
-
-            duplexnum = 1
-            omega, rho, tau, slide = caseselect(dup1, omega, rho, tau, slide)
-            coordinates, axis1 = calculate(
-                coord3, omega, rho, tau, slide, axis1)
-            coord3 = backbone_modify(dup1, coordinates, duplexnum)
-            coord3 = rotateRz(coord3)
-            coord3 = translate(coord3, tiletype)
-
-            duplexnum = 2
-            omega, rho, tau, slide = caseselect(dup2, omega, rho, tau, slide)
-            coordinates2, axis2 = calculate(
-                coord4, omega, rho, tau, slide, axis2)
-            coord4 = backbone_modify(dup2, coordinates2, duplexnum)
-            coord4 = rotateRz(coord4)
-            coord4 = translate(coord4, tiletype)
-
-            coord3, coord4, mvdist =\
-                makedxtile(coord3, coord4, dup1, dup2, junction)
+#        coordinates[base pair index][atom index][x,y,z index]
 
         # A tile
         tilenum = 'A'
+
+#        for theta in np.arange(0, 45.*PI, 30.*PI):
+
+#        for theta in np.arange(30.*PI, 45.*PI, 30.*PI):
+        theta = 330.*PI
+        R = np.array([[cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0,0,1]]) 
+        for bp_index in range(coord2.shape[0]):
+            for atom_index in range(coord2.shape[1]):
+                coord2[bp_index, atom_index] = np.dot(R, coord2[bp_index, atom_index])
+        theta = int(ceil(theta / PI))
+        pdbfile = open('CR' + str(theta) + '.pdb', 'w')
         DXoutput(coord1, coord2, tilenum, None, None, 'a')
-        DXoutput(coord1, coord2, tilenum, None, None, 'b')
-        DXoutput(coord1, coord2, tilenum, None, None, 'c')
-        DXoutput(coord1, coord2, tilenum, None, None, 'd')
+
+#        DXoutput(coord1, coord2, tilenum, None, None, 'b')
+#        DXoutput(coord1, coord2, tilenum, None, None, 'c')
+#        DXoutput(coord1, coord2, tilenum, None, None, 'd')
 
         if tiletype[0] != 'C':
             # B tile

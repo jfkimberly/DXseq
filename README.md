@@ -2,17 +2,20 @@
 
 ## Introduction
 
-![img](figures/dx-hp-mol-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.") ![img](figures/dx-hp-resize.gif "An atomic (left) and a simplified (right) rendition of a DX tile with hairpins.")
+![img](figures/dx-hp-mol-resize.gif "An atomic (left) and a simplified (right)
+ rendition of a DX tile with hairpins.") ![img](figures/dx-hp-resize.gif "An
+ atomic (left) and a simplified (right) rendition of a DX tile with hairpins.")
 
 Want to create your own *atomically* correct double-crossover tiles? Keep
 reading!
 
-**DXseq** is a program which reads in a DNA nucleotide sequence and outputs
-the spatial coordinates of each atom of each nucleotide comprising that
-sequence in a [Protein Data Bank (PDB) format](http://www.rcsb.org/pdb/home/home.do). Currently, the nucleotides
-are stacked in B-form (other DNA conformations may be added in the future).
-Once the output file is produced, molecular visualization software can be
-used to visualize the tertiary structure of the DNA.
+**DXseq** is a program which reads in a DNA nucleotide sequence and outputs the
+spatial coordinates of each atom of each nucleotide comprising that sequence in
+a [Protein Data Bank (PDB) format](http://www.rcsb.org/pdb/home/home.do).
+Currently, the nucleotides are stacked in B-form (other DNA conformations may
+be added in the future). Once the output file is produced, it can be used for
+molecular dynamic studies or molecular visualization software can be used to
+visualize the tertiary structure of the DNA.
 
 Although the atomic coordinates of any DNA structure can be produced using
 this program, at present the only available command-line options are for
@@ -24,7 +27,8 @@ various types of DX tiles (hence the name, **DXseq**).
 Python installed on your computer. This software has not been tested with
 Python 3.0 or higher, so I cannot guarantee it will work under those
 environments. If you do not have Python installed on your computer, you may
-download the latest version at [<http://www.python.org/download/>](http://www.python.org/download/).
+download the latest version at
+[<http://www.python.org/download/>](http://www.python.org/download/).
 
 All python package dependencies can be installed using `pip`. `pip` does not
 come pre-installed with the python virtual machine, so you need to install
@@ -120,12 +124,13 @@ we used in [this *ACS Nano* paper](http://pubs.acs.org/doi/abs/10.1021/nn201312g
 ### DNA flexibility
 
 Another feature this program offers is the calculation of the intrinsic
-curvature of DNA due to its flexibility. When this is turned on (via the
-`-c` flag on the command-line), the structural parameters of the DNA
-(*i.e.*, twist, roll, tilt, and slide) changes from idealized values to
-[values calculated from 36 independent tetramers](http://www.tandfonline.com/doi/abs/10.1080/07391102.2002.10506828) based on experimental values
-from the [Nucleic Acid Database](http://www.sciencedirect.com/science/article/pii/S0006349592816491). The differences between the two can be seen
-below.
+curvature of DNA due to its flexibility. When this is turned on (via the `-c`
+flag on the command-line), the structural parameters of the DNA (*i.e.*, twist,
+roll, tilt, and slide) changes from idealized values to
+[values calculated from 36 independent tetramers](http://www.tandfonline.com/doi/abs/10.1080/07391102.2002.10506828)
+based on experimental values from the
+[Nucleic Acid Database](http://www.sciencedirect.com/science/article/pii/S0006349592816491).
+The differences between the two can be seen below.
 
 ![img](figures/curvature.png)
 
